@@ -1,0 +1,1 @@
+taskkill /IM "Bluestacks.exe" /F
