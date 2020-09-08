@@ -88,6 +88,13 @@ if ahk.image_search(r'C:\Users\jonat\PycharmProjects\VT_GrubHub\Images\your_favo
 else:
     print('I DONT SEE IT :\'(')
 
+sleep(2)
+
+print(ahk.image_search(r"C:\Users\jonat\PycharmProjects\VT_GrubHub\Images\wan.png"))
+
+subprocess.run('kill_bluestacks.bat')
+sys.exit(1)
+
 # Begin Collecting Vood
 for c in range(SCROLL_COUNT):
     sleep(0.5)
