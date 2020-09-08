@@ -21,8 +21,10 @@ def timeout_check_color(x, y, color, timeout=15, time=0.25):
         sleep(time)
         if time_check <= 0:
             os.execl(sys.executable, os.path.abspath(__file__), *sys.argv)
-            sys.exit(-1)
+            sys.exit(1)
+            return False
         time_check -= 1
+    return True
 
 # Constants
 X = 3072
@@ -40,11 +42,12 @@ if ahk.find_window(title=b'BlueStacks'):
 subprocess.run('run_bluestacks.bat') #Give birth to Bluestacks
 print('Running BlueStacks')
 
-sleep(1)
+sleep(2)
 
 # Find Bluestacks and Maximize it
 bluestacks = ahk.find_window(title=b'BlueStacks')
 bluestacks.activate()
+# bluestacks.maximize()
 bluestacks.maximize()
 
 timeout_check_color(1550, 170, '0x20233A')
@@ -52,6 +55,10 @@ timeout_check_color(1550, 170, '0x20233A')
 bluestacks.click(175, 165) #Click on 'My Games'
 sleep(0.50)
 bluestacks.click(365, 390) #Open GrubHub
+
+sleep(3)
+
+timeout_check_color(700, 800, '0x000000')
 
 sleep(1)
 
@@ -74,6 +81,12 @@ def move_one_item(num_items=1):
         ahk.mouse_move(X / 2, Y / 2)
         ahk.mouse_drag(x=0, y=-137, speed=15, relative=True)
         sleep(0.50)
+
+if ahk.image_search(r'C:\Users\jonat\PycharmProjects\VT_GrubHub\Images\your_favorites.png', color_variation=1):
+    print('I SEE IT')
+
+else:
+    print('I DONT SEE IT :\'(')
 
 # Begin Collecting Vood
 for c in range(SCROLL_COUNT):
