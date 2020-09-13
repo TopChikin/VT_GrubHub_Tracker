@@ -172,7 +172,7 @@ while remaining_rests:
 
             click_on_image('back')
             sleep(0.25)
-            click_on_image('vtCampus_White')
+            click_on_image('vtCampus_White') # TODO Fix "Where the...? Our locator thing couldn't find any restaurants for you. Please try again"
             sleep(0.5)
 
             completed_items.append(rest)

@@ -19,7 +19,7 @@ def collect_data():
     if not ahk.find_window(title=b'BlueStacks'):
         subprocess.Popen('collect_data.bat')
 
-def collection_loop(check_interval=180):
+def collection_loop(check_interval=(5 * 60)):
     print('Beginning collection loop')
     current_time = get_time_interval()
     collect_data()
