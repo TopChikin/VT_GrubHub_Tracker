@@ -9,11 +9,15 @@ with open(f'{os.getcwd()}/restaurants.txt', 'r') as file:
 
 gc = gspread.service_account(filename=f'{os.getcwd()}/client_secret.json') # Authenticate Client
 gc = gc.open('grubhub-data') # Select grubhub-data file sheet
-log = gc.sheet1 # Choose first sheet (log)
+waiting_time_log = gc.get_worksheet(1)
+amount_in_line = gc.get_worksheet(0)
+
 
 # Add First Row
 # restaurants.insert(0, 'Time')
 # restaurants.insert(0, 'Date of Week')
+# restaurants.insert(0, 'Full Time')
 # restaurants.insert(0, 'Full Date')
-# 
-# log.append_row(restaurants)
+#
+# waiting_time_log.append_row(restaurants)
+# amount_in_line.append_row(restaurants)
