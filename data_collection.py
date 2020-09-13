@@ -8,6 +8,7 @@ import os
 import pytesseract
 import pyautogui
 import gspread
+import datetime as dt
 
 # Constants
 X = 3072
@@ -29,7 +30,7 @@ def get_restaurant_names(path=f'{os.getcwd()}/restaurants.txt'):
     names = []
     file = open(path, 'r')
     for line in file:
-        names.append([line.replace('\n', '')])
+        names.append(line.replace('\n', ''))
     file.close()
     return names
 
@@ -56,9 +57,10 @@ def wait_for_color(x, y, color, timeout=15, interval=0.25):
 # waits for a specified image to appear
 # restarts program after however many seconds timeout specifies
 def wait_for_image(img_name, timeout=15, interval=.25):
+    path = f'{os.getcwd()}/Images/{img_name}.png'
     loops_until_timeout = timeout / interval
-    while ahk.image_search(f'{os.getcwd()}/Images/{img_name}.png') is None:
-        print('none')
+    while ahk.image_search(path) is None:
+        print(f"couldn't find {img_name}")
         sleep(interval)
         if loops_until_timeout <= 0:
             # TODO: fix memory leak
@@ -70,21 +72,29 @@ def wait_for_image(img_name, timeout=15, interval=.25):
 
 
 # clicks on a specified image
-def click_on_image(img_name):
-    x, y = ahk.image_search(f'{os.getcwd()}/Images/{img_name}.png')
-    if x is None:
+def click_on_image(img_name, upper_bound=(0,0), lower_bound=(X,Y), region=(0, 0, X, Y)):
+    path = f'{os.getcwd()}/Images/{img_name}.png'
+    # print(path)
+    pos = pyautogui.locateCenterOnScreen(path, confidence=0.9, region=region)
+    # pos = ahk.image_search(path, color_variation=20, upper_bound=upper_bound, lower_bound=lower_bound)
+    if pos is None:
         return False
-    ahk.move_mouse(x + 2, y + 2)
-    ahk.click(x + 2, y + 2)
+    x, y = pos
+    ahk.mouse_move(x, y)
+    sleep(0.25)
+    ahk.click(x, y)
     return True
 
-# Move one item down
 def move_one_item(num_items=1):
     for i in range(num_items):
         ahk.mouse_move(X / 2, Y / 2)
-        ahk.mouse_drag(x=0, y=-137, speed=15, relative=True)
+# Move one item down
+        ahk.mouse_drag(x=0, y=(-137 / Y) * Y, speed=15, relative=True)
         sleep(0.50)
 
+# if ahk.find_window(title=b'VT_GrubHub - data_collection.py'):
+#     print('minimizing pycharm')
+#     ahk.find_window(title=b'VT_GrubHub - data_collection.py').minimize()
 
 # Open Bluestacks if not already open
 if ahk.find_window(title=b'BlueStacks'):
@@ -101,6 +111,8 @@ sleep(2)
 bluestacks = ahk.find_window(title=b'BlueStacks')
 bluestacks.activate()
 bluestacks.maximize()
+bluestacks.minimize()
+bluestacks.maximize()
 
 print('waiting for mygames')
 wait_for_image('myGames')
@@ -110,6 +122,13 @@ click_on_image('myGames')
 
 print('waiting for grubhub')
 wait_for_image('grubhub')
+
+print('clicking on grubhub')
+click_on_image('grubhub')
+
+# wait_for_image('vtCampus')
+
+sleep(3)
 
 # Scroll Up & Refresh
 ahk.mouse_move(X / 2, Y / 2)
@@ -127,41 +146,57 @@ sleep(2)
 
 # Begin Collecting Vood
 
-
-a = dt.datetime.now()
-time = a.strftime("%c")
+# Connect to Google Sheets API
+gc = gspread.service_account(filename=f'{os.getcwd()}/client_secret.json') # Authenticate Client
+gc = gc.open('grubhub-data') # Select grubhub-data file sheet
+log = gc.sheet1 # Choose first sheet (log)
 
 remaining_rests = get_restaurant_names()
-r_list = get_restaurant_names()
 
-new_row = [time]
+rest_data = {}
+
+print(remaining_rests)
 
 while remaining_rests:
+    completed_items = []
     for i, rest in enumerate(remaining_rests):
-        if click_on_image(rest):
+        if click_on_image(rest, region=(1040, 80, 2040-1040, 1830-80)):
             # collect data
-            table_data["name"].append(rest)
-            table_data["amount_waiting"].append(1)
-            
+            wait_for_color(1500, 260, '0x60B3FF')
+            text = ocr_screenshot(1045, 560, 2000, 610)
+            print(f'found data - {rest} - {text}')
+            amount_waiting = text # scan data and put it into this var
+            rest_data[rest] = amount_waiting
 
-            # insert data into data
-            table_data[rest] = "helo"
-            del restaurants[i]
+            click_on_image('back', upper_bound=(1040, 80), lower_bound=(2040, 1830))
+            sleep(0.25)
+            click_on_image('vtCampus_White', upper_bound=(1040, 80), lower_bound=(2040, 1830))
+            sleep(0.5)
 
-sleep(1.5)
-ahk.mouse_move(1536, 1685)
-ahk.click(1536, 1685)  # Click on Restuaurant
+            completed_items.append(rest)
+        else:
+            print(f'couldn\'t find - {rest}')
 
-wait_for_color(1775, 210, '0x489FFF')
+    for item in completed_items:
+        remaining_rests.remove(item)
+    if len(completed_items)==0:
+        print('yo wtf i found nothing')
+    print()
+    move_one_item(1)
 
-print(ocr_screenshot(1065, 330, 1700, 365))
+# Set First 3 Rows to Time
+t = dt.datetime.now()
+new_row = [t.strftime("%a"), t.strftime("%Y-%m-%d"), t.strftime("%H:%M")]
 
-sleep(0.25)
-ahk.click(1095, 150)  # Back out of Restaurant
+# Add Restaurant Data to new_row
+r_list = get_restaurant_names()
+for restaurant in r_list:
+    new_row.append(rest_data[restaurant])
 
-print('W O W')
+print(new_row)
 
-sleep(2)
+sys.exit(0)
+
 subprocess.run(r'kill_bluestacks.bat') #Assassinate Bluestacks
 
 
