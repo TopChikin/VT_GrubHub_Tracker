@@ -141,11 +141,13 @@ sleep(2)
 
 remaining_rests = get_restaurant_names()
 
+raw_text_data = {}
 wait_time_data = {}
 amount_data = {}
 
 print(remaining_rests)
 
+# While there are remaining restaurants scroll down and collect more restaurants
 while remaining_rests:
     completed_items = []
     for rest in remaining_rests:
@@ -155,6 +157,7 @@ while remaining_rests:
             text = ocr_screenshot(1045, 560, 2000, 610)
             print(f'found data - {rest} - {text}')
 
+            raw_text_data[rest] = text
             # filter data and insert into data dictionaries
             wait_time_match = re.search(r"([0-9]+)[\s]?min",text)
             if wait_time_match is not None:
@@ -167,6 +170,8 @@ while remaining_rests:
             if amount_waiting_match is not None:
                 amount_waiting = int(amount_waiting_match.group(1))
                 amount_data[rest] = amount_waiting
+            elif 'No Line' in text:
+                amount_data[rest] = '0'
             else:
                 amount_data[rest] = 'N/A'
 
@@ -186,7 +191,13 @@ while remaining_rests:
         # print(f'there were {len(completed_items)} items left at the end of data collection')
         # break
     print()
-    move_one_item(1)
+    move_one_item(2)
+
+print("Collected Data-----------------")
+print(raw_text_data)
+print(amount_data)
+print(wait_time_data)
+print("-------------------------------")
 
 # Set First 3 Rows to Time
 t = dt.datetime.now()
@@ -204,6 +215,9 @@ for restaurant in r_list:
 for restaurant in r_list:
     new_waiting_row.append(wait_time_data[restaurant])
 
+
+
+
 print(new_line_row)
 
 # Connect to Google Sheets API
@@ -217,3 +231,5 @@ waiting_time_log.append_row(new_waiting_row)
 
 # sys.exit(0)
 subprocess.run(r'kill_bluestacks.bat') #Assassinate Bluestacks
+
+sys.exit(0)
